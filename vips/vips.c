@@ -590,7 +590,8 @@ vips_pngsave_go(VipsImage *in, void **buf, size_t *len, int interlace, int quant
     else if (colors > 2) bitdepth = 2;
   } else {
     bitdepth = vips_get_palette_bit_depth(in);
-    if (bitdepth) {
+    // avoid sending invalid bitdepth to vips
+    if (bitdepth == 1 || bitdepth == 2 || bitdepth == 4 || bitdepth == 8 || bitdepth == 16) {
       quantize = 1;
       colors = 1 << bitdepth;
     }
