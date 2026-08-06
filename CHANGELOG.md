@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+### Added
+- `IMGPROXY_SWIFT_LEGACY_PERCENT_DECODE_FIRST` config, enabled by default. Swift object keys are looked up using the pre-3.25 percent-decoding behavior first, falling back to the current literal key only on a 404. This is a temporary migration aid for callers still building source URLs for the old behavior; disable it once no such callers remain.
+
 ## [4.0.12] - 2026-07-29
 ### Fixed
 - Fixed possible BMP loader heap buffer overflow.

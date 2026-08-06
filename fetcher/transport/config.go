@@ -21,6 +21,13 @@ var (
 	IMGPROXY_USE_SWIFT                  = env.Bool("IMGPROXY_USE_SWIFT")
 	IMGPROXY_SOURCE_URL_QUERY_SEPARATOR = env.String("IMGPROXY_SOURCE_URL_QUERY_SEPARATOR")
 
+	// IMGPROXY_SWIFT_LEGACY_PERCENT_DECODE_FIRST is a temporary migration aid: when enabled
+	// (the default), Swift object keys are first looked up using the pre-3.25 percent-decoding
+	// behavior (one extra decode pass), falling back to the current literal key only on a 404.
+	// Lets old and new source URL encodings coexist during rollout. Should be turned off once
+	// no callers rely on the legacy double-percent-encoded URL format.
+	IMGPROXY_SWIFT_LEGACY_PERCENT_DECODE_FIRST = env.Bool("IMGPROXY_SWIFT_LEGACY_PERCENT_DECODE_FIRST")
+
 	fsDesc = fs.ConfigDesc{
 		Root: env.String("IMGPROXY_LOCAL_FILESYSTEM_ROOT"),
 	}
@@ -87,22 +94,26 @@ type Config struct {
 	// to each transport which needs it as the consturctor parameter. Otherwise,
 	// we would have to add it to each transport config struct.
 	SourceURLQuerySeparator string
+
+	// see IMGPROXY_SWIFT_LEGACY_PERCENT_DECODE_FIRST
+	SwiftLegacyPercentDecodeFirst bool
 }
 
 // NewDefaultConfig returns a new default transport configuration
 func NewDefaultConfig() Config {
 	return Config{
-		HTTP:                    generichttp.NewDefaultConfig(),
-		Local:                   fs.NewDefaultConfig(),
-		ABSEnabled:              false,
-		ABS:                     azure.NewDefaultConfig(),
-		GCSEnabled:              false,
-		GCS:                     gcs.NewDefaultConfig(),
-		S3Enabled:               false,
-		S3:                      s3.NewDefaultConfig(),
-		SwiftEnabled:            false,
-		Swift:                   swift.NewDefaultConfig(),
-		SourceURLQuerySeparator: "?", // default is ?, but can be overridden with empty
+		HTTP:                          generichttp.NewDefaultConfig(),
+		Local:                         fs.NewDefaultConfig(),
+		ABSEnabled:                    false,
+		ABS:                           azure.NewDefaultConfig(),
+		GCSEnabled:                    false,
+		GCS:                           gcs.NewDefaultConfig(),
+		S3Enabled:                     false,
+		S3:                            s3.NewDefaultConfig(),
+		SwiftEnabled:                  false,
+		Swift:                         swift.NewDefaultConfig(),
+		SourceURLQuerySeparator:       "?", // default is ?, but can be overridden with empty
+		SwiftLegacyPercentDecodeFirst: true,
 	}
 }
 
@@ -122,6 +133,7 @@ func LoadConfigFromEnv(c *Config) (*Config, error) {
 		IMGPROXY_USE_GCS.Parse(&c.GCSEnabled),
 		IMGPROXY_USE_S3.Parse(&c.S3Enabled),
 		IMGPROXY_USE_SWIFT.Parse(&c.SwiftEnabled),
+		IMGPROXY_SWIFT_LEGACY_PERCENT_DECODE_FIRST.Parse(&c.SwiftLegacyPercentDecodeFirst),
 		genericErr,
 		localErr,
 		absErr,

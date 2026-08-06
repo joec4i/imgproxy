@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/imgproxy/imgproxy/v4/fetcher/transport/generichttp"
+	"github.com/imgproxy/imgproxy/v4/storage"
 
 	absStorage "github.com/imgproxy/imgproxy/v4/storage/abs"
 	fsStorage "github.com/imgproxy/imgproxy/v4/storage/fs"
@@ -124,7 +125,12 @@ func (t *Transport) registerAllProtocols() error {
 			return err
 		}
 
-		t.RegisterProtocol("swift", NewRoundTripper(tr, sep))
+		var reader storage.Reader = tr
+		if t.config.SwiftLegacyPercentDecodeFirst {
+			reader = NewLegacyPercentDecodeReader(tr)
+		}
+
+		t.RegisterProtocol("swift", NewRoundTripper(reader, sep))
 	}
 
 	return nil
